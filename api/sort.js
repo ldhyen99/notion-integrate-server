@@ -13,6 +13,15 @@ const notion = new Client({ auth: notionSecret });
 const VALID_SORT_PROPERTIES = ["Name", "Company", "Status", "Priority", "EstimatedValue", "AccountOwner"];
 const VALID_SORT_DIRECTIONS = ["ascending", "descending"];
 
+const PROPERTY_MAPPING = {
+    Name: "Name",
+    Company: "Company",
+    Status: "Status",
+    Priority: "Priority",
+    EstimatedValue: "Estimated Value",
+    AccountOwner: "Account Owner",
+};
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   const { property, direction } = req.query;
@@ -23,6 +32,7 @@ export default async function handler(req, res) {
     });
   }
 
+  const notionProperty = PROPERTY_MAPPING[property];
   const sortDirection = direction && VALID_SORT_DIRECTIONS.includes(direction) ? direction : "ascending";
 
   try {
@@ -31,7 +41,7 @@ export default async function handler(req, res) {
       database_id: notionDatabaseId,
       sorts: [
         {
-          property: property,
+          property: notionProperty,
           direction: sortDirection,
         },
       ],
