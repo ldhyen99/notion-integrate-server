@@ -13,7 +13,7 @@ const notion = new Client({ auth: notionSecret });
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
 
-  if (req.url === "/api" || req.url === "/api/") {
+  if (req.url === "/api/data" || req.url === "/api/data") {
     try {
       console.log("Querying Notion API...");
       const query = await notion.databases.query({
