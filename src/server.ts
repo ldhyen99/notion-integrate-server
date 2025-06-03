@@ -4,6 +4,7 @@ if (process.env.NODE_ENV !== 'production') {
 
 import http from "http";
 import { Client } from "@notionhq/client";
+import { v4 as uuidv4 } from 'uuid';
 
 interface SalesCMS {
   name: string;
@@ -33,7 +34,7 @@ const server = http.createServer(async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
 
   switch (req.url) {
-    case "/": {
+    case "/data": {
       const query = await notion.databases.query({
         database_id: notionDatabaseId,
       });
@@ -62,8 +63,10 @@ const server = http.createServer(async (req, res) => {
           const priority = priorityCell.select?.name ?? "";
           const estimatedValue = estimatedValueCell.number ?? 0;
           const accountOwner = accountOwnerCell.people?.[0].object ?? "";
-
+          console.log({row});
+          
           return {
+            id: uuidv4(),
             name,
             company,
             status,
@@ -74,6 +77,7 @@ const server = http.createServer(async (req, res) => {
         }
 
         return {
+          id: "",
           name: "NOT_FOUND",
           company: "NOT_FOUND",
           status: "NOT_FOUND",
