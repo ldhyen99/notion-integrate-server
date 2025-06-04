@@ -17,14 +17,6 @@
       "dest": "/api/health-check.js"
     },
     {
-      "src": "/api/sort",
-      "dest": "/api/sort.js"
-    },
-    {
-      "src": "/api/filter",
-      "dest": "/api/filter.js"
-    },
-    {
       "src": "/api/data",
       "dest": "/api/data.js"
     },

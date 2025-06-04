@@ -1,6 +1,5 @@
 const handler = async (req, res) => {
     try {
-      // Kiểm tra trạng thái server
       const healthStatus = {
         status: "healthy",
         timestamp: new Date().toISOString(),
