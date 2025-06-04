@@ -1,5 +1,5 @@
+
 import { Client } from "@notionhq/client";
-import { v4 as uuidv4 } from 'uuid';
 
 const notionDatabaseId = process.env.NOTION_DATABASE_ID;
 const notionSecret = process.env.NOTION_SECRET;
@@ -38,6 +38,9 @@ const SUPPORTED_OPERATORS = {
   timestamp: ["after", "before", "on_or_after", "on_or_before"], 
   status: ["equals", "does_not_equal", "is_empty", "is_not_empty"],
 };
+
+const VALID_SORT_PROPERTIES = ["Name", "Company", "Status", "Priority", "Estimated Value", "Account Owner"];
+const VALID_SORT_DIRECTIONS = ["ascending", "descending"];
 
 function calculateNestingLevel(filter) {
   if (!filter || typeof filter !== "object") return 0;
@@ -80,17 +83,57 @@ function validateFilter(filter) {
   }
 }
 
-async function fetchWithFlattenedFilter(filter, maxNestingLevel = 2) {
+async function fetchWithFlattenedFilter(filter, sort, maxNestingLevel = 2) {
   validateFilter(filter);
+    
+  let sortConfig = [];
+  if (sort && typeof sort === "object") {
+    const { property, direction } = sort;
+    if (!property || !VALID_SORT_PROPERTIES.includes(property)) {
+      throw new Error(`Invalid sort property: ${property}. Must be one of: ${VALID_SORT_PROPERTIES.join(", ")}`);
+    }
 
-  const nestingLevel = calculateNestingLevel(filter);
-  if (nestingLevel <= maxNestingLevel) {    
-    const response = await notion.databases.query({
-      database_id: notionDatabaseId,
-      filter: filter,
-    });
-    return response.results;
+    const sortDirection = direction && VALID_SORT_DIRECTIONS.includes(direction) ? direction : "ascending";
+    sortConfig = [
+      {
+        property: property,
+        direction: sortDirection,
+      },
+    ];
   }
+
+    const nestingLevel = filter ? calculateNestingLevel(filter) : 0;
+    if (nestingLevel <= maxNestingLevel) {
+      if (filter && sortConfig.length > 0) {
+        const response = await notion.databases.query({
+          database_id: notionDatabaseId,
+          filter,
+          sorts: sortConfig,
+        });
+        return response.results;
+      }
+      else if (filter) {
+        const response = await notion.databases.query({
+          database_id: notionDatabaseId,
+          filter,
+        });
+        return response.results;
+      }
+      else if (sortConfig.length > 0) {
+        const response = await notion.databases.query({
+          database_id: notionDatabaseId,
+          sorts: sortConfig,
+        });
+        return response.results;
+      }
+      else {
+        console.log("Calling Notion API without filter or sort");
+        const response = await notion.databases.query({
+          database_id: notionDatabaseId,
+        });
+        return response.results;
+      }
+    }
 
   const { and, or } = filter;
   const subFilters = and || or || [];
@@ -125,27 +168,23 @@ async function fetchWithFlattenedFilter(filter, maxNestingLevel = 2) {
 }
 
 export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  
+    if (req.method === "OPTIONS") {
+      return res.status(200).end();
+    }
+  
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Method not allowed" });
+    }
 
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
-
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
-  const { filter, maxNestingLevel = 2 } = req.body;
-
-  if (!filter) {
-    return res.status(400).json({ error: "Filter is required" });
-  }
+  const { filter, maxNestingLevel = 2, sort } = req.body;
 
   try {
     console.log("Applying filter with max nesting level:", maxNestingLevel);
-    const results = await fetchWithFlattenedFilter(filter, maxNestingLevel);
+    const results = await fetchWithFlattenedFilter(filter, sort, maxNestingLevel);
     
     const list = results.map((row, index) => {
       const nameCell = row.properties["Name"];
@@ -170,7 +209,7 @@ export default async function handler(req, res) {
         const estimatedValue = estimatedValueCell.number ?? 0;
         const accountOwner = accountOwnerCell.people?.[0].object ?? "";
 
-        return { id: (index + 1), name, company, status, priority, estimatedValue, accountOwner };
+        return { id: (index+1), name, company, status, priority, estimatedValue, accountOwner };
       }
 
       return {

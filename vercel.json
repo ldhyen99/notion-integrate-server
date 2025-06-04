@@ -25,6 +25,10 @@
       "dest": "/api/filter.js"
     },
     {
+      "src": "/api/sort-filter",
+      "dest": "/api/sort-filter.js"
+    },
+    {
       "src": "/api/data",
       "dest": "/api/data.js"
     },
