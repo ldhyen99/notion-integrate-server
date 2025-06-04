@@ -8,11 +8,28 @@
   ],
   "routes": [
     {
+      "src": "/",
+      "status": 302,
+      "headers": { "Location": "/api/health-check" }
+    },
+    {
+      "src": "/api/health-check",
+      "dest": "/api/health-check.js"
+    },
+    {
       "src": "/api/sort",
       "dest": "/api/sort.js"
     },
     {
+      "src": "/api/filter",
+      "dest": "/api/filter.js"
+    },
+    {
       "src": "/api/data",
+      "dest": "/api/data.js"
+    },
+    {
+      "src": "/api/(.*)",
       "dest": "/api/data.js"
     },
     {
