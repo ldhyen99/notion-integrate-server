@@ -42,7 +42,7 @@ const SUPPORTED_OPERATORS = {
 const VALID_SORT_PROPERTIES = ["Name", "Company", "Status", "Priority", "Estimated Value", "Account Owner"];
 const VALID_SORT_DIRECTIONS = ["ascending", "descending"];
 
-function calculateNestingLevel(filter) {
+export function calculateNestingLevel(filter) {
   if (!filter || typeof filter !== "object") return 0;
 
   const keys = Object.keys(filter);
@@ -54,7 +54,7 @@ function calculateNestingLevel(filter) {
   return 0;
 }
 
-function validateFilter(filter) {
+export function validateFilter(filter) {
   if (!filter || typeof filter !== "object") return;
 
   if (filter.and || filter.or) {
@@ -83,7 +83,7 @@ function validateFilter(filter) {
   }
 }
 
-async function fetchWithFlattenedFilter(filter, sort, maxNestingLevel = 2) {
+export async function fetchWithFlattenedFilter(filter, sort, maxNestingLevel = 2) {
   validateFilter(filter);
     
   let sortConfig = [];
@@ -213,7 +213,7 @@ export default async function handler(req, res) {
       }
 
       return {
-        id: "",
+        id: (index+1),
         name: "NOT_FOUND",
         company: "NOT_FOUND",
         status: "NOT_FOUND",
